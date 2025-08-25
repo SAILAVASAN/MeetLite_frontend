@@ -18,6 +18,7 @@ export default function App() {
   const [peers, setPeers] = useState({});
   const [roomId, setRoomId] = useState("");
   const [joined, setJoined] = useState(false);
+  const [username, setUsername] = useState("");
 
   const socketRef = useRef(null);
   const localStreamRef = useRef(null);
@@ -36,12 +37,12 @@ export default function App() {
       localStreamRef.current = stream;
 
       // ---- signaling handlers ----
-      socket.on("peer-joined", async ({ peerId }) => {
+      socket.on("peer-joined", async ({ peerId, username }) => {
         console.log("👤 Peer joined:", peerId);
 
         const pc = createOrGetPeer(peerId, (remoteStream) => {
-          setPeers((prev) => ({ ...prev, [peerId]: { pc, stream: remoteStream } }));
-          peersRef.current[peerId] = pc;
+            setPeers((prev) => ({ ...prev, [peerId]: { pc, stream: remoteStream, username } }));
+            peersRef.current[peerId] = pc;
         });
         peersRef.current[peerId] = pc;
 
@@ -162,6 +163,13 @@ export default function App() {
       <div className="h-screen flex items-center justify-center flex-col gap-4">
         <input
           type="text"
+          placeholder="Enter Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="px-3 py-2 rounded-lg border text-black"
+        />
+        <input
+          type="text"
           placeholder="Enter Room ID"
           value={roomId}
           onChange={(e) => setRoomId(e.target.value)}
@@ -169,7 +177,7 @@ export default function App() {
         />
         <button
           className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-          onClick={() => roomId && setJoined(true)}
+          onClick={() => roomId && username && setJoined(true)}
         >
           Join
         </button>
@@ -180,10 +188,10 @@ export default function App() {
   return (
     <div className="h-screen w-screen bg-slate-900 text-white relative">
       <div className="grid grid-cols-3 gap-2 p-4">
-        <VideoTile stream={localStreamRef.current} isLocal />
-        {Object.entries(peers).map(([peerId, { stream }]) => (
-          <VideoTile key={peerId} stream={stream} />
-        ))}
+              <VideoTile stream={localStreamRef.current} isLocal username={username} />
+              {Object.entries(peers).map(([peerId, { stream, username }]) => (
+                  <VideoTile key={peerId} stream={stream} username={username} />
+              ))}
       </div>
 
       <Controls
